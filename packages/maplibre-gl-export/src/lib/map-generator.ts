@@ -69,12 +69,25 @@ export default class MapGenerator extends MapGeneratorBase {
 			renderMap.setPitch(this.map.getPitch());
 		}
 
-		// the below code was added by https://github.com/watergis/maplibre-gl-export/pull/18.
+		// Copy images from the old map to the new map
 		const images = ((this.map as MaplibreMap).style.imageManager || {}).images || [];
 		Object.keys(images).forEach((key) => {
 			if (!images[key].data) return;
 			renderMap.addImage(key, images[key].data);
 		});
+
+		// Copy feature states from the old map to the new map
+		const sources = this.map.getStyle().sources;
+		for (const sourceId in sources) {
+			const source = this.map.getSource(sourceId);
+			if (source && source.getFeatureState) {
+				const featureIds = source.getFeatureIds(); // Assuming you have a method to get feature IDs
+				featureIds.forEach((featureId) => {
+					const state = source.getFeatureState(featureId);
+					renderMap.setFeatureState({ source: sourceId, id: featureId }, state);
+				});
+			}
+		}
 
 		return renderMap;
 	}
